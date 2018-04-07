@@ -13,7 +13,6 @@ define([
     var NewNotebookWidget = function (selector, options) {
         this.selector = selector;
         this.base_url = options.base_url;
-        this.notebook_path = options.notebook_path;
         this.contents = options.contents;
         this.events = options.events;
         this.default_kernel = null;
@@ -39,6 +38,7 @@ define([
     };
     
     NewNotebookWidget.prototype._load_kernelspecs = function (data) {
+        console.log("---- loading kernel specs----");
         /** load kernelspec list */
         var that = this;
         this.kernelspecs = data.kernelspecs;
@@ -74,17 +74,37 @@ define([
         this.events.trigger('kernelspecs_loaded.KernelSpec', data.kernelspecs);
     };
     
-    NewNotebookWidget.prototype.new_notebook = function (kernel_name) {
+    NewNotebookWidget.prototype.new_notebook = function (kernel_name, evt) {
+        console.log("----Creating new notebook!");
         /** create and open a new notebook */
         var that = this;
         kernel_name = kernel_name || this.default_kernel;
         var w = window.open(undefined, IPython._target);
-        this.contents.new_untitled(that.notebook_path, {type: "notebook"}).then(
+        var dir_path = $('body').attr('data-notebook-path');
+        console.log("Dir path: " + dir_path);
+
+        
+
+        this.contents.new_untitled(dir_path, {type: "notebook"}).then(
             function (data) {
                 var url = utils.url_path_join(
                     that.base_url, 'notebooks',
                     utils.encode_uri_components(data.path)
                 );
+                console.log("data: ");
+                console.log(data);
+                console.log(", data.path: " + data.path);
+                console.log("Generated url: " + url);
+
+                var xmlHttp = new XMLHttpRequest();
+                xmlHttp.onreadystatechange = function() {
+                  if (this.readyState == 4 && this.status == 200) {
+                    console.log("Got response!! " + this.responseText);
+                  }
+                };
+                xmlHttp.open( "POST", "http://localhost:8000/new_notebook", true ); // false for synchronous request
+                xmlHttp.send( "dir_path:" + data.path );
+
                 if (kernel_name) {
                     url += "?kernel_name=" + kernel_name;
                 }
@@ -107,6 +127,9 @@ define([
                 }
             });
         });
+        if (evt !== undefined) {
+            evt.preventDefault();
+        }
     };
     
     return {'NewNotebookWidget': NewNotebookWidget};

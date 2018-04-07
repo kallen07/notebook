@@ -99,6 +99,7 @@ define([
         this.placeholder = this._options.placeholder || '';
 
         this.cell_id = utils.uuid();
+        console.log ("My cell id is: " + this.cell_id);
 
         // For JS VM engines optimization, attributes should be all set (even
         // to null) in the constructor, and if possible, if different subclass
@@ -499,7 +500,9 @@ define([
         if (data.metadata.collapsed === false) {
             delete data.metadata.collapsed;
         }
+        data.metadata.uuid = this.cell_id;
         data.cell_type = this.cell_type;
+       
         return data;
     };
 

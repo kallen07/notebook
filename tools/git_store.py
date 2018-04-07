@@ -43,9 +43,9 @@ def write_cells(repo, nb):
         raise Exception("Repo not initialized correctly")
 
     for cell in nb['cells']:
-        cell_filename = repo.working_tree_dir + cell['uuid']
+        cell_filename = repo.working_tree_dir + cell['metadata']['uuid']
         with open(cell_filename, 'w') as cell_file:
-            dump(nb, cell_file)
+            dump(cell, cell_file)
 
 
 def write_uuids(repo, uuids):
@@ -64,7 +64,7 @@ def uuids_from_git(repo):
 
 def uuids_from_notebook(nb):
     """ Read Notebook and return the list of uuids, sorted by cell order """
-    return [cell['uuid'] for cell in nb['cells']]
+    return [cell['metadata']['uuid'] for cell in nb['cells']]
 
 
 def removed_uuids(previous, current):

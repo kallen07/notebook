@@ -152,6 +152,7 @@ define([
     
     /** @method create_element */
     CodeCell.prototype.create_element = function () {
+        console.log("Code cell, creating element");
         Cell.prototype.create_element.apply(this, arguments);
         var that = this;
 
@@ -203,6 +204,12 @@ define([
         this.element.focusout(
             function() { that.auto_highlight(); }
         );
+
+        this.events.on('kernel_restarting.Kernel', function() {
+            if (that.input_prompt_number === '*') {
+              that.set_input_prompt();
+            }
+        });
     };
 
 
@@ -306,6 +313,7 @@ define([
      * @method execute
      */
     CodeCell.prototype.execute = function (stop_on_error) {
+        console.log("Code cell, executing code cell to the kernel");
         if (!this.kernel) {
             console.log(i18n.msg._("Can't execute cell since kernel is not set."));
             return;
@@ -424,6 +432,7 @@ define([
     // Basic cell manipulation.
 
     CodeCell.prototype.select = function () {
+        console.log("Code cell, selecting element");
         var cont = Cell.prototype.select.apply(this, arguments);
         if (cont) {
             this.code_mirror.refresh();
@@ -511,6 +520,7 @@ define([
 
 
     CodeCell.prototype.get_text = function () {
+        console.log("Code cell, getting text for cell, it's: " + this.code_mirror.getValue());
         return this.code_mirror.getValue();
     };
 
