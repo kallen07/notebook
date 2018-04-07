@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 
-""" Save a Jupyter Notebook to a Git repo """
+""" Utilities for Git-Notebook interconnect """
 
-
-from json import dump, load
 from git import Repo
 from git.repo.fun import is_git_dir
+from json import dump, load
+from os import rename
 
 
 def open_notebook(path):
@@ -115,10 +115,31 @@ def uuid_filename(repo):
     return repo.working_tree_dir + '/UUIDS'
 
 
+def checkout_revision(repo, rev):
+    """ Update repo to revision id rev """
+    repo.checkout(rev)
+    repo.index.write()
+
+
+def write_notebook(repo, nb_path):
+    """ Write a new notebook given a repo state """
+    uuids = uuids_from_git(repo)
+    with open(nb_path + '.tmp', 'a') as nb:
+        for uuid in uuids:
+            with open('{}/{}'.format(repo.working_tree_dir, uuid), 'r') as f:
+                dump(nb, load(f))
+    rename(nb_path + '.tmp', nb_path)
+
+
 """
-    Example Usage:
+    Example Usage (Notebook --> Git):
         nb = open_notebook(nb_path)
         repo = open_repo(repo_path)
         update_repo(repo, nb)
         repo.close()
+
+    Example Usage (Git --> Notebook):
+        repo = open_repo(repo_path)
+        checkout_revision(revision)
+        write_notebook(repo, nb_path)
 """
