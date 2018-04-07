@@ -8,6 +8,20 @@ from json import dump, load
 from os import rename
 
 
+"""
+    Example Usage (Notebook --> Git):
+        nb = open_notebook(nb_path)
+        repo = open_repo(repo_path)
+        update_repo(repo, nb)
+        repo.close()
+
+    Example Usage (Git --> Notebook):
+        repo = open_repo(repo_path)
+        checkout_revision(revision)
+        write_notebook(repo, nb_path)
+"""
+
+
 def open_notebook(path):
     """ Load and return a Jupyter notebook specified by 'path' """
     with open(path, 'r') as f:
@@ -129,17 +143,3 @@ def write_notebook(repo, nb_path):
             with open('{}/{}'.format(repo.working_tree_dir, uuid), 'r') as f:
                 dump(nb, load(f))
     rename(nb_path + '.tmp', nb_path)
-
-
-"""
-    Example Usage (Notebook --> Git):
-        nb = open_notebook(nb_path)
-        repo = open_repo(repo_path)
-        update_repo(repo, nb)
-        repo.close()
-
-    Example Usage (Git --> Notebook):
-        repo = open_repo(repo_path)
-        checkout_revision(revision)
-        write_notebook(repo, nb_path)
-"""
