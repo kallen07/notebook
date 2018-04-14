@@ -18,5 +18,8 @@
     "less": "~2",
     "requirejs": "^2.1.17"
   },
-  "dependencies": {}
+  "dependencies": {
+    "nmp": "^1.0.3",
+    "npm": "^5.8.0"
+  }
 }
