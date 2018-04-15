@@ -5,7 +5,7 @@
 from git import Repo
 from git.repo.fun import is_git_dir
 from json import dump, load
-from os import rename
+from os import rename, path
 
 
 """
@@ -35,7 +35,10 @@ def open_repo(path):
     if is_git_dir(path):
         return Repo(path)
     else:
-        return Repo.init(path)
+        repo = Repo.init(path)
+        with open(uuid_filename(repo), 'w+') as f:
+            pass
+        return repo
 
 
 def write_cells(repo, nb):
@@ -44,7 +47,7 @@ def write_cells(repo, nb):
         raise Exception("Repo not initialized correctly")
 
     for cell in nb['cells']:
-        cell_filename = '{}/{}'.format(repo.working_tree_dir, cell['uuid'])
+        cell_filename = path.join(repo.working_tree_dir, cell['metadata']['uuid'])
         with open(cell_filename, 'w+') as cell_file:
             dump(cell, cell_file)
 
@@ -65,7 +68,7 @@ def uuids_from_git(repo):
 
 def uuids_from_notebook(nb):
     """ Read Notebook and return the list of uuids, sorted by cell order """
-    return [cell['uuid'] for cell in nb['cells']]
+    return [cell['metadata']['uuid'] for cell in nb['cells']]
 
 
 def removed_uuids(previous, current):
@@ -132,7 +135,7 @@ def update_repo(repo, nb):
 
 def uuid_filename(repo):
     """ Return the full path of the UUID order file for this repo """
-    return '{}/{}'.format(repo.working_tree_dir, 'UUIDS')
+    return path.join(repo.working_tree_dir, 'UUIDS')
 
 
 def checkout_revision(repo, rev):
@@ -144,8 +147,8 @@ def checkout_revision(repo, rev):
 def write_notebook(repo, nb_path):
     """ Write a new notebook given a repo state """
     uuids = uuids_from_git(repo)
-    with open(nb_path + '.tmp', 'a') as nb:
+    with open(path.join(nb_path,'.tmp'), 'a') as nb:
         for uuid in uuids:
-            with open('{}/{}'.format(repo.working_tree_dir, uuid), 'r') as f:
+            with open(path.join(repo.working_tree_dir, uuid), 'r') as f:
                 dump(load(f), nb, indent=4)
-    rename(nb_path + '.tmp', nb_path)
+    rename(path.join(nb_path,'.tmp'), nb_path)
