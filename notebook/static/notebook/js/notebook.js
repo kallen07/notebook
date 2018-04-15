@@ -2742,6 +2742,20 @@ define([
 
         console.log("============================Model:============================");
         console.log(model);
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            console.log("Got response!! " + this.responseText);
+          }
+        };
+        xmlHttp.open( "POST", "http://localhost:8000/save_notebook", true ); // false for synchronous request
+        var post_data = {
+            nb_path: this.notebook_path,
+            nb_contents: model
+        };
+        console.log("Sending post data:");
+        console.log(post_data);
+        xmlHttp.send(JSON.stringify(post_data));
         console.log("============================Cell contents (first cell):============================");
         console.log(model["content"]["cells"][0]["cell_type"])
         console.log(model["content"]["cells"][0]["source"])
@@ -3015,6 +3029,7 @@ define([
      * @param {string} notebook_path - A notebook to load
      */
     Notebook.prototype.load_notebook = function (notebook_path) {
+        console.log("Loading notebook with path: " + notebook_path);
         this.notebook_path = notebook_path;
         this.notebook_name = utils.url_path_split(this.notebook_path)[1];
         this.events.trigger('notebook_loading.Notebook');
@@ -3033,6 +3048,7 @@ define([
      */
     Notebook.prototype.load_notebook_success = function (data) {
         var failed, msg;
+        console.log("Loading notebook from JSON SUCCESS!");
         try {
             this.fromJSON(data);
         } catch (e) {
@@ -3351,6 +3367,21 @@ define([
      */
     Notebook.prototype.restore_checkpoint = function (checkpoint) {
         this.events.trigger('notebook_restoring.Notebook', checkpoint);
+        console.log("Restoring checkpoint " + checkpoint);
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            console.log("Got response!! " + this.responseText);
+          }
+        };
+        xmlHttp.open( "POST", "http://localhost:8000/restore_checkpoint", true ); // false for synchronous request
+        var post_data = {
+            nb_path: this.notebook_path,
+            checkpoint: checkpoint
+        };
+        // TODO: Repeat this logic but for "git snapshots" or whatever...
+        xmlHttp.send(JSON.stringify(post_data));
+
         var that = this;
         this.contents.restore_checkpoint(this.notebook_path, checkpoint).then(
             $.proxy(this.restore_checkpoint_success, this),
@@ -3365,6 +3396,7 @@ define([
      */
     Notebook.prototype.restore_checkpoint_success = function () {
         this.events.trigger('checkpoint_restored.Notebook');
+        console.log("Restored checkpoint success!");
         this.load_notebook(this.notebook_path);
     };
 
@@ -3374,6 +3406,7 @@ define([
      * @param {string} checkpoint ID
      */
     Notebook.prototype.delete_checkpoint = function (checkpoint) {
+        console.log("Deleting checkpoint with id " +  checkpoint)
         this.events.trigger('notebook_restoring.Notebook', checkpoint);
         var that = this;
         this.contents.delete_checkpoint(this.notebook_path, checkpoint).then(

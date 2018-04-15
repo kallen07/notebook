@@ -103,7 +103,10 @@ define([
                   }
                 };
                 xmlHttp.open( "POST", "http://localhost:8000/new_notebook", true ); // false for synchronous request
-                xmlHttp.send( "dir_path:" + data.path );
+                var post_data = {
+                    dir_path: data.path
+                };
+                xmlHttp.send(JSON.stringify(post_data));
 
                 if (kernel_name) {
                     url += "?kernel_name=" + kernel_name;

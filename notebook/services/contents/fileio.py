@@ -277,9 +277,15 @@ class FileManagerMixin(Configurable):
             tmp_path = path_to_intermediate(os_path)
 
             if not self.use_atomic_writing or not os.path.exists(tmp_path):
+                error_details = ""
+                if not self.use_atomic_writing:
+                    error_details += "no use atomic writing\n"
+                if not os.path.exists(tmp_path):
+                    error_details += "Path does not exist: {}".format(tmp_path)
+
                 raise HTTPError(
                     400,
-                    u"Unreadable Notebook: %s %r" % (os_path, e_orig),
+                    u"Unreadable Notebook: %s (detail: %s) %r" % (os_path, error_details, e_orig),
                 )
 
             # Move the bad file aside, restore the intermediate, and try again.

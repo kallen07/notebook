@@ -147,8 +147,8 @@ def checkout_revision(repo, rev):
 def write_notebook(repo, nb_path):
     """ Write a new notebook given a repo state """
     uuids = uuids_from_git(repo)
-    with open(path.join(nb_path,'.tmp'), 'a') as nb:
+    with open(nb_path + '.tmp', 'a') as nb:
         for uuid in uuids:
             with open(path.join(repo.working_tree_dir, uuid), 'r') as f:
                 dump(load(f), nb, indent=4)
-    rename(path.join(nb_path,'.tmp'), nb_path)
+    rename(nb_path + '.tmp', nb_path)
