@@ -17,8 +17,9 @@ from os import rename
 
     Example Usage (Git --> Notebook):
         repo = open_repo(repo_path)
-        checkout_revision(revision)
+        checkout_revision(repo, revision)
         write_notebook(repo, nb_path)
+        repo.close()
 """
 
 
@@ -43,8 +44,8 @@ def write_cells(repo, nb):
         raise Exception("Repo not initialized correctly")
 
     for cell in nb['cells']:
-        cell_filename = repo.working_tree_dir + cell['metadata']['uuid']
-        with open(cell_filename, 'w') as cell_file:
+        cell_filename = '{}/{}'.format(repo.working_tree_dir, cell['uuid'])
+        with open(cell_filename, 'w+') as cell_file:
             dump(cell, cell_file)
 
 
@@ -64,7 +65,7 @@ def uuids_from_git(repo):
 
 def uuids_from_notebook(nb):
     """ Read Notebook and return the list of uuids, sorted by cell order """
-    return [cell['metadata']['uuid'] for cell in nb['cells']]
+    return [cell['uuid'] for cell in nb['cells']]
 
 
 def removed_uuids(previous, current):
@@ -102,6 +103,11 @@ def change_uuids(repo, nb):
 def update_repo(repo, nb):
     """ Write updated UUIDS and git add/rm changed cell files """
     #
+    # Checkout master to get most recent copy of git log
+    #
+    repo.git.checkout('master', force=True)
+
+    #
     # Write all current cells to their own files
     #
     write_cells(repo, nb)
@@ -126,13 +132,13 @@ def update_repo(repo, nb):
 
 def uuid_filename(repo):
     """ Return the full path of the UUID order file for this repo """
-    return repo.working_tree_dir + '/UUIDS'
+    return '{}/{}'.format(repo.working_tree_dir, 'UUIDS')
 
 
 def checkout_revision(repo, rev):
     """ Update repo to revision id rev """
-    repo.checkout(rev)
-    repo.index.write()
+    repo.head.reference = repo.commit(rev)
+    repo.head.reset(index=True, working_tree=True)
 
 
 def write_notebook(repo, nb_path):
@@ -141,5 +147,5 @@ def write_notebook(repo, nb_path):
     with open(nb_path + '.tmp', 'a') as nb:
         for uuid in uuids:
             with open('{}/{}'.format(repo.working_tree_dir, uuid), 'r') as f:
-                dump(nb, load(f))
+                dump(load(f), nb, indent=4)
     rename(nb_path + '.tmp', nb_path)
