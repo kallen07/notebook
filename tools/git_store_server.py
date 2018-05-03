@@ -2,12 +2,8 @@
 
 ''' Create GitStore server so Jupyter Notebook can connect from a Browser '''
 
-# import SimpleHTTPServer
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from git_store import *
-# import SocketServer
-# import os.path
-# import sys
+from tools.git_store import *
 from sys import argv, stderr
 import json
 import os
@@ -30,8 +26,6 @@ class GitStoreHandler(BaseHTTPRequestHandler):
         print('possible name: {}'.format(possible_name))
         self._set_headers()
         self.wfile.write('Got path: {}'.format(self.path).encode())
-
-        # return SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
 
     def do_POST(self):
         print('in do_POST')
@@ -68,7 +62,8 @@ class GitStoreHandler(BaseHTTPRequestHandler):
             checkpoint = 'ae51092b34a81366cdaf36e51e922d2aa36eca18'
             checkout_revision(repo, checkpoint)
             write_notebook(repo, full_path)
-
+        else:
+            print('Unrecognized path: {0}'.format(self.path))
 
         self._set_headers()
         self.send_response(200)
@@ -80,7 +75,7 @@ class GitStoreHandler(BaseHTTPRequestHandler):
         # print '{}'.format(data)
         # f = open('for_presen.py')
         # self.wfile.write(f.read())
-        #self.wfile.write('Got your data!'.encode())
+        # self.wfile.write('Got your data!'.encode())
 
 
 def start_git_store():
@@ -95,7 +90,6 @@ def start_git_store():
             print('port value provided must be an integer')
 
     print('serving on port {0}'.format(port), file=stderr)
-    # server = SocketServer.TCPServer(('0.0.0.0', port), Handler)
     httpd = HTTPServer(('0.0.0.0', port), GitStoreHandler)
     httpd.serve_forever()
 
