@@ -3,7 +3,9 @@
 ''' Utilities for Git-Notebook interconnect '''
 
 from json import dump, load
-from os import basename, path, rename
+from os import path  # , rename
+from shutil import copyfile
+from subprocess import run
 
 from git import Repo, InvalidGitRepositoryError
 
@@ -34,7 +36,7 @@ def open_repo(repo_path):
     ''' Load (or init if it does not exist) a git repo specified by 'path' '''
     try:
         return Repo(repo_path)
-    except (InvalidGitRepositoryError):
+    except InvalidGitRepositoryError:
         #
         # Otherwise, init git repo and create an empty cell ordering file
         # Add and commit this file. Doing a non-empty commit creates the branch
@@ -112,6 +114,12 @@ def change_uuids(repo, notebook):
     return (new_uuids, deleted_uuids)
 
 
+def write_snapshot(notebook):
+    ''' Write snapshot of notebook, duplicating whole file '''
+    with open('snapshot.ipynb') as snapshot:
+        dump(notebook, snapshot)
+
+
 def update_repo(repo, notebook, tag_name=None):
     ''' Write updated UUIDS and git add/rm changed cell files '''
     #
@@ -130,6 +138,11 @@ def update_repo(repo, notebook, tag_name=None):
     write_cells(repo, notebook)
 
     #
+    # Write copy of notebook to make restores easier
+    #
+    write_snapshot(notebook)
+
+    #
     # Update UUIDS file, get changed uuids
     #
     new_uuids, deleted_uuids = change_uuids(repo, notebook)
@@ -142,7 +155,7 @@ def update_repo(repo, notebook, tag_name=None):
         index.add(new_uuids)
     if deleted_uuids:
         index.remove(deleted_uuids)
-    index.add(['UUIDS'])
+    index.add(['UUIDS', 'snapshot.ipynb'])
     index.write_tree()
 
     if tag_name is None:
@@ -164,26 +177,53 @@ def checkout_revision(repo, rev):
 
 def write_notebook(repo, nb_path):
     ''' Write a new notebook given a repo state '''
+    ''' Work In Progress reconstruction. For now, restore from snapshot
     uuids = uuids_from_git(repo)
     with open(nb_path + '.tmp', 'a') as temp_nb_file:
         for uuid in uuids:
             with open(path.join(repo.working_tree_dir, uuid), 'r') as cell_file:
                 dump(load(cell_file), temp_nb_file, indent=4)
     rename(nb_path + '.tmp', nb_path)
+    '''
+
+    snapshot = path.join(repo.working_tree_dir, 'snapshot.ipynb')
+    copyfile(snapshot, nb_path)
+
+
+def restore_snapshot(nb_dir, nb_name, rev):
+    repo = open_repo(get_repo_path(nb_dir, nb_name))
+    checkout_revision(repo, rev)
+    write_notebook(repo, nb_name)
+    repo.close()
+
+
+def save_notebook(nb_dir, nb_name, tag_name=None):
+    nb = open_notebook(get_nb_path(nb_dir, nb_name))
+    repo = open_repo(get_repo_path(nb_dir, nb_name))
+    update_repo(repo, nb, tag_name)
+    repo.close()
+
+
+def rename_notebook(nb_dir, old_name, new_name):
+    old_path = get_repo_path(nb_dir, old_name)
+    new_path = get_repo_path(nb_dir, new_name)
+
+    run('mv {0} {1}'.format(old_path, new_path).split())
 
 
 def get_log(repo):
     return repo.iter_commits()
 
 
-def save_notebook(nb_name, repo_path, tag_name=None):
-    nb = open_notebook(nb_name)
-    repo = open_repo(repo_path)
-    update_repo(repo, nb, tag_name)
-    repo.close()
+def get_repo_name(nb_name):
+    return '.' + path.basename(nb_name) + '_repo'
 
 
 def get_repo_path(nb_dir, nb_name):
-    repo_name = '.' + basename(nb_name) + '_repo'
+    repo_name = get_repo_name(nb_name)
     repo_path = path.join(nb_dir, repo_name)
     return repo_path
+
+
+def get_nb_path(nb_dir, nb_name):
+    return path.join(nb_dir, nb_name)

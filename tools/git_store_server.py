@@ -7,7 +7,6 @@ from tools.git_store import *
 from sys import argv, stderr
 import json
 import os
-from subprocess import run
 
 
 class GitStoreHandler(BaseHTTPRequestHandler):
@@ -36,13 +35,13 @@ class GitStoreHandler(BaseHTTPRequestHandler):
         print('Got path: {}'.format(self.path))
 
         if self.path == '/new_notebook':
-            notebook_url = self.data_json['dir_path']
-            full_path = os.path.join(notebook_dir, notebook_url)
-            print('Url: {}. Full: {}'.format(notebook_url, full_path))
-            nb = open_notebook(full_path)
-            repo = open_repo(notebook_dir)
-            update_repo(repo, nb)
-            repo.close()
+            print('in new_notebook')
+
+            nb_name = self.data_json['nb_name']
+            print('nb_name: {}'.format(nb_name))
+
+            save_notebook(nb_dir, nb_name)
+
         elif self.path == '/save_notebook':
             print('in save_notebook')
 
@@ -52,29 +51,19 @@ class GitStoreHandler(BaseHTTPRequestHandler):
             repo_path = self.data_json['repo_path']
             print('repo_path: {}'.format(repo_path))
 
-            save_notebook(nb_name, repo_path)
+            save_notebook(nb_dir, nb_name)
 
-        elif self.path == '/restore_checkpoint':
-            print('in restore_checkpoint')
+        elif self.path == '/restore_snapshot':
+            print('in restore_snapshot')
 
             nb_name = self.data_json['nb_name']
             print('nb_name: {}'.format(nb_name))
 
-            repo_path = self.data_json['repo_path']
-            print('repo_path: {}'.format(repo_path))
+            checkpoint = self.data_json['rev']
+            print('rev: {}'.format(rev))
 
-            checkpoint = self.data_json['checkpoint']
-            print('checkpoint: {}'.format(checkpoint))
+            restore_snapshot(nb_dir, nb_name, rev)
 
-            repo = open_repo(repo_path)
-
-            logs = get_log(repo)
-            for log in logs:
-                print('commit: {0}:{1}'.format(log.message, log.name_rev))
-
-            checkout_revision(repo, checkpoint)
-            write_notebook(repo, nb_name)
-            repo.close()
         elif self.path == '/create_tag':
             print('in create_tag')
 
@@ -84,9 +73,8 @@ class GitStoreHandler(BaseHTTPRequestHandler):
             tag = self.data_json['tag_name']
             print('tag_name: {}'.format(tag))
 
-            repo_path = get_repo_path(nb_dir, nb_name)
+            save_notebook(nb_dir, nb_name, tag_name=tag)
 
-            save_notebook(nb_name, repo_path, tag_name=tag)
         elif self.path == '/rename_notebook':
             print('in rename_notebook')
 
@@ -96,10 +84,8 @@ class GitStoreHandler(BaseHTTPRequestHandler):
             new_name = self.data_json['new_name']
             print('new_name: {}'.format(new_name))
 
-            old_path = get_repo_path(nb_dir, old_name)
-            new_path = get_repo_path(nb_dir, new_name)
+            rename_notebook(nb_dir, old_name, new_name)
 
-            run('mv {0} {1}'.format(old_path, new_path).split())
         else:
             print('Unrecognized path: {0}'.format(self.path))
 
@@ -118,12 +104,12 @@ class GitStoreHandler(BaseHTTPRequestHandler):
 
 def start_git_store():
     port = 8000
-    global notebook_dir
+    global nb_dir
     if len(argv) > 1:
         try:
             p = int(argv[1])
             port = p
-            notebook_dir = argv[2]
+            nb_dir = argv[2]
         except ValueError:
             print('port value provided must be an integer')
 
