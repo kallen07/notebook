@@ -214,7 +214,7 @@ def rename_notebook(nb_dir, old_name, new_name):
     old_path = get_repo_path(nb_dir, old_name)
     new_path = get_repo_path(nb_dir, new_name)
 
-    call('mv {0} {1}'.format(old_path, new_path).split())
+    call(['mv', old_path, new_path])
 
 
 def get_log(repo):
@@ -222,7 +222,7 @@ def get_log(repo):
 
 
 def get_repo_name(nb_name):
-    return '.' + path.basename(nb_name) + '_repo'
+    return '.' + nb_name.split(".ipynb")[0] + '_repo'
 
 
 def get_repo_path(nb_dir, nb_name):

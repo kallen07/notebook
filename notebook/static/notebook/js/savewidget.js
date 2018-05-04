@@ -83,6 +83,9 @@ define([
             $('<input/>').attr('type','text').attr('size','25').addClass('form-control')
             .val(options.notebook.get_notebook_name())
         );
+
+        // KALINA LOOK AT THIS ^^
+
         var d = dialog.modal({
             title: i18n.msg._("Rename Notebook"),
             body: dialog_body,
@@ -103,9 +106,30 @@ define([
                         } else {
                             d.find('.rename-message').text(i18n.msg._("Renaming..."));
                             d.find('input[type="text"]').prop('disabled', true);
+
+                            var old_notebook_name = that.notebook.notebook_path;
                             that.notebook.rename(new_name).then(
                                 function () {
                                     d.modal('hide');
+                                    console.log("In savewidget, old path should be: " + old_notebook_name + "\nNew path: " + new_name);
+
+                                    var xmlHttp = new XMLHttpRequest();
+                                    xmlHttp.onreadystatechange = function() {
+                                      if (this.readyState == 4 && this.status == 200) {
+                                        console.log("Got response!! " + this.responseText);
+                                      }
+                                    };
+                                    xmlHttp.open( "POST", "http://localhost:8000/rename_notebook", true ); // false for synchronous request
+                                    var post_data = {
+                                        old_name: old_notebook_name,
+                                        new_name: that.notebook.notebook_path
+                                    };
+                                    console.log("Sending post data:");
+                                    console.log(post_data);
+                                    xmlHttp.send(JSON.stringify(post_data));
+
+
+
                                 }, function (error) {
                                     d.find('.rename-message').text(error.message || i18n.msg._('Unknown error'));
                                     d.find('input[type="text"]').prop('disabled', false).focus().select();
