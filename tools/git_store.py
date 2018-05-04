@@ -5,8 +5,7 @@
 from json import dump, load
 from os import rename, path
 
-from git import Repo
-from git.repo.fun import is_git_dir
+from git import Repo, InvalidGitRepositoryError
 
 
 '''
@@ -31,18 +30,23 @@ def open_notebook(nb_path):
     return notebook
 
 
-def open_repo(nb_path):
+def open_repo(repo_path):
     ''' Load (or init if it does not exist) a git repo specified by 'path' '''
-    if is_git_dir(nb_path):
-        return Repo(nb_path)
-
-    #
-    # Otherwise, init git repo and create an empty cell ordering file
-    #
-    repo = Repo.init(nb_path)
-    with open(uuid_filename(repo), 'w+') as uuid_file:
-        uuid_file.write('\n')
-    return repo
+    try:
+        return Repo(repo_path)
+    except (InvalidGitRepositoryError):
+        #
+        # Otherwise, init git repo and create an empty cell ordering file
+        # Add and commit this file. Doing a non-empty commit creates the branch
+        # 'master' that we assume exists in `update_repo`
+        #
+        repo = Repo.init(repo_path)
+        with open(uuid_filename(repo), 'w+') as uuid_file:
+            uuid_file.write('')
+        index = repo.index
+        index.add(['UUIDS', uuid_filename(repo)])
+        index.commit('First Commit')
+        return repo
 
 
 def write_cells(repo, notebook):
@@ -108,7 +112,7 @@ def change_uuids(repo, notebook):
     return (new_uuids, deleted_uuids)
 
 
-def update_repo(repo, notebook):
+def update_repo(repo, notebook, tag_name=None):
     ''' Write updated UUIDS and git add/rm changed cell files '''
     #
     # Checkout master to get most recent copy of git log
@@ -140,7 +144,12 @@ def update_repo(repo, notebook):
         index.remove(deleted_uuids)
     index.add(['UUIDS'])
     index.write_tree()
-    index.commit('a commit message')
+
+    if tag_name is None:
+        index.commit('a commit message')
+    else:
+        index.commit(tag_name)
+        repo.git.tag(tag_name, repo.iter_commits[0])
 
 
 def uuid_filename(repo):
@@ -150,8 +159,7 @@ def uuid_filename(repo):
 
 def checkout_revision(repo, rev):
     ''' Update repo to revision id rev '''
-    repo.head.reference = repo.commit(rev)
-    repo.head.reset(index=True, working_tree=True)
+    repo.git.checkout(rev, force=True)
 
 
 def write_notebook(repo, nb_path):
@@ -162,3 +170,14 @@ def write_notebook(repo, nb_path):
             with open(path.join(repo.working_tree_dir, uuid), 'r') as cell_file:
                 dump(load(cell_file), temp_nb_file, indent=4)
     rename(nb_path + '.tmp', nb_path)
+
+
+def get_log(repo):
+    return repo.iter_commits()
+
+
+def save_notebook(nb_path, repo_path, tag_name=None):
+    nb = open_notebook(nb_path)
+    repo = open_repo(repo_path)
+    update_repo(repo, nb, tag_name)
+    repo.close()

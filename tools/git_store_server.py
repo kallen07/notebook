@@ -33,8 +33,6 @@ class GitStoreHandler(BaseHTTPRequestHandler):
         self.data_json = json.loads(self.data_string.decode())
         print('Got data string: {}'.format(self.data_string))
         print('Got path: {}'.format(self.path))
-        possible_name = self.path.strip('/')+'.html'
-        print('possible name: {}'.format(possible_name))
 
         if self.path == '/new_notebook':
             notebook_url = self.data_json['dir_path']
@@ -45,23 +43,50 @@ class GitStoreHandler(BaseHTTPRequestHandler):
             update_repo(repo, nb)
             repo.close()
         elif self.path == '/save_notebook':
+            print('in save_notebook')
+
             nb_path = self.data_json['nb_path']
-            nb_contents = self.data_json['nb_contents']
-            full_path = os.path.join(notebook_dir, nb_path)
-            nb = open_notebook(full_path)
-            repo = open_repo(notebook_dir)
-            update_repo(repo, nb)
-            repo.close()
+            print('nb_path: {}'.format(nb_path))
+
+            repo_path = self.data_json['repo_path']
+            print('repo_path: {}'.format(repo_path))
+
+            save_notebook(nb_path, repo_path)
+
         elif self.path == '/restore_checkpoint':
+            print('in restore_checkpoint')
+
             nb_path = self.data_json['nb_path']
+            print('nb_path: {}'.format(nb_path))
+
+            repo_path = self.data_json['repo_path']
+            print('repo_path: {}'.format(repo_path))
+
             checkpoint = self.data_json['checkpoint']
-            full_path = os.path.join(notebook_dir, nb_path)
-            print('Checkpoint: {}'.format(checkpoint))
-            repo = open_repo(notebook_dir)
-            # TODO: Revision is hardcoded for now
-            checkpoint = 'ae51092b34a81366cdaf36e51e922d2aa36eca18'
+            print('checkpoint: {}'.format(checkpoint))
+
+            repo = open_repo(repo_path)
+
+            logs = get_log(repo)
+            for log in logs:
+                print('commit: {0}:{1}'.format(log.message, log.name_rev))
+
             checkout_revision(repo, checkpoint)
-            write_notebook(repo, full_path)
+            write_notebook(repo, nb_path)
+            repo.close()
+        elif self.path == '/create_tag':
+            print('in create_tag')
+
+            nb_path = self.data_json['nb_path']
+            print('nb_path: {}'.format(nb_path))
+
+            repo_path = self.data_json['repo_path']
+            print('repo_path: {}'.format(repo_path))
+
+            tag = self.data_json['tag_name']
+            print('tag_name: {}'.format(tag))
+
+            save_notebook(nb_path, repo_path, tag_name=tag)
         else:
             print('Unrecognized path: {0}'.format(self.path))
 
