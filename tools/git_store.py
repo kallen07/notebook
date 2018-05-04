@@ -5,7 +5,7 @@
 from json import dump, load
 from os import path, mkdir
 from shutil import copyfile
-from subprocess import run
+from subprocess import call
 
 from git import Repo, InvalidGitRepositoryError
 
@@ -214,7 +214,7 @@ def rename_notebook(nb_dir, old_name, new_name):
     old_path = get_repo_path(nb_dir, old_name)
     new_path = get_repo_path(nb_dir, new_name)
 
-    run('mv {0} {1}'.format(old_path, new_path).split())
+    call('mv {0} {1}'.format(old_path, new_path).split())
 
 
 def get_log(repo):

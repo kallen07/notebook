@@ -2750,7 +2750,7 @@ define([
         };
         xmlHttp.open( "POST", "http://localhost:8000/save_notebook", true ); // false for synchronous request
         var post_data = {
-            nb_path: this.notebook_path,
+            nb_name: this.notebook_path,
             nb_contents: model
         };
         console.log("Sending post data:");
@@ -3376,7 +3376,7 @@ define([
         };
         xmlHttp.open( "POST", "http://localhost:8000/restore_checkpoint", true ); // false for synchronous request
         var post_data = {
-            nb_path: this.notebook_path,
+            nb_name: this.notebook_path,
             checkpoint: checkpoint
         };
         // TODO: Repeat this logic but for "git snapshots" or whatever...
