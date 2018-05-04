@@ -3,7 +3,7 @@
 ''' Utilities for Git-Notebook interconnect '''
 
 from json import dump, load
-from os import rename, path
+from os import basename, path, rename
 
 from git import Repo, InvalidGitRepositoryError
 
@@ -176,8 +176,14 @@ def get_log(repo):
     return repo.iter_commits()
 
 
-def save_notebook(nb_path, repo_path, tag_name=None):
-    nb = open_notebook(nb_path)
+def save_notebook(nb_name, repo_path, tag_name=None):
+    nb = open_notebook(nb_name)
     repo = open_repo(repo_path)
     update_repo(repo, nb, tag_name)
     repo.close()
+
+
+def get_repo_path(nb_dir, nb_name):
+    repo_name = '.' + basename(nb_name) + '_repo'
+    repo_path = path.join(nb_dir, repo_name)
+    return repo_path

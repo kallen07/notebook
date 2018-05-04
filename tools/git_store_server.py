@@ -7,6 +7,7 @@ from tools.git_store import *
 from sys import argv, stderr
 import json
 import os
+from subprocess import run
 
 
 class GitStoreHandler(BaseHTTPRequestHandler):
@@ -45,19 +46,19 @@ class GitStoreHandler(BaseHTTPRequestHandler):
         elif self.path == '/save_notebook':
             print('in save_notebook')
 
-            nb_path = self.data_json['nb_path']
-            print('nb_path: {}'.format(nb_path))
+            nb_name = self.data_json['nb_name']
+            print('nb_name: {}'.format(nb_name))
 
             repo_path = self.data_json['repo_path']
             print('repo_path: {}'.format(repo_path))
 
-            save_notebook(nb_path, repo_path)
+            save_notebook(nb_name, repo_path)
 
         elif self.path == '/restore_checkpoint':
             print('in restore_checkpoint')
 
-            nb_path = self.data_json['nb_path']
-            print('nb_path: {}'.format(nb_path))
+            nb_name = self.data_json['nb_name']
+            print('nb_name: {}'.format(nb_name))
 
             repo_path = self.data_json['repo_path']
             print('repo_path: {}'.format(repo_path))
@@ -72,21 +73,33 @@ class GitStoreHandler(BaseHTTPRequestHandler):
                 print('commit: {0}:{1}'.format(log.message, log.name_rev))
 
             checkout_revision(repo, checkpoint)
-            write_notebook(repo, nb_path)
+            write_notebook(repo, nb_name)
             repo.close()
         elif self.path == '/create_tag':
             print('in create_tag')
 
-            nb_path = self.data_json['nb_path']
-            print('nb_path: {}'.format(nb_path))
-
-            repo_path = self.data_json['repo_path']
-            print('repo_path: {}'.format(repo_path))
+            nb_name = self.data_json['nb_name']
+            print('nb_name: {}'.format(nb_name))
 
             tag = self.data_json['tag_name']
             print('tag_name: {}'.format(tag))
 
-            save_notebook(nb_path, repo_path, tag_name=tag)
+            repo_path = get_repo_path(nb_dir, nb_name)
+
+            save_notebook(nb_name, repo_path, tag_name=tag)
+        elif self.path == '/rename_notebook':
+            print('in rename_notebook')
+
+            old_name = self.data_json['old_name']
+            print('old_name: {}'.format(old_name))
+
+            new_name = self.data_json['new_name']
+            print('new_name: {}'.format(new_name))
+
+            old_path = get_repo_path(nb_dir, old_name)
+            new_path = get_repo_path(nb_dir, new_name)
+
+            run('mv {0} {1}'.format(old_path, new_path).split())
         else:
             print('Unrecognized path: {0}'.format(self.path))
 
