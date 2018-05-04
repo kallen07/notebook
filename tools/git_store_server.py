@@ -48,9 +48,6 @@ class GitStoreHandler(BaseHTTPRequestHandler):
             nb_name = self.data_json['nb_name']
             print('nb_name: {}'.format(nb_name))
 
-            repo_path = self.data_json['repo_path']
-            print('repo_path: {}'.format(repo_path))
-
             save_notebook(nb_dir, nb_name)
 
         elif self.path == '/restore_snapshot':
@@ -59,7 +56,9 @@ class GitStoreHandler(BaseHTTPRequestHandler):
             nb_name = self.data_json['nb_name']
             print('nb_name: {}'.format(nb_name))
 
-            checkpoint = self.data_json['rev']
+            print('nb_path: {}'.format(get_nb_path(nb_dir, nb_name)))
+
+            rev = self.data_json['rev']
             print('rev: {}'.format(rev))
 
             restore_snapshot(nb_dir, nb_name, rev)

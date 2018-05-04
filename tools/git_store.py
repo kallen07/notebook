@@ -3,7 +3,7 @@
 ''' Utilities for Git-Notebook interconnect '''
 
 from json import dump, load
-from os import path  # , rename
+from os import path, mkdir
 from shutil import copyfile
 from subprocess import run
 
@@ -34,6 +34,9 @@ def open_notebook(nb_path):
 
 def open_repo(repo_path):
     ''' Load (or init if it does not exist) a git repo specified by 'path' '''
+    if not path.isdir(repo_path):
+        mkdir(repo_path)
+
     try:
         return Repo(repo_path)
     except InvalidGitRepositoryError:
@@ -114,14 +117,17 @@ def change_uuids(repo, notebook):
     return (new_uuids, deleted_uuids)
 
 
-def write_snapshot(notebook):
+def write_snapshot(nb_dir, nb_name, notebook):
     ''' Write snapshot of notebook, duplicating whole file '''
-    with open('snapshot.ipynb') as snapshot:
+    with open(get_snapshot_path(nb_dir, nb_name), 'w+') as snapshot:
         dump(notebook, snapshot)
 
 
-def update_repo(repo, notebook, tag_name=None):
+def update_repo(nb_dir, nb_name, tag_name=None):
     ''' Write updated UUIDS and git add/rm changed cell files '''
+
+    notebook = open_notebook(get_nb_path(nb_dir, nb_name))
+    repo = open_repo(get_repo_path(nb_dir, nb_name))
     #
     # Checkout master to get most recent copy of git log
     #
@@ -140,7 +146,7 @@ def update_repo(repo, notebook, tag_name=None):
     #
     # Write copy of notebook to make restores easier
     #
-    write_snapshot(notebook)
+    write_snapshot(nb_dir, nb_name, notebook)
 
     #
     # Update UUIDS file, get changed uuids
@@ -164,6 +170,8 @@ def update_repo(repo, notebook, tag_name=None):
         index.commit(tag_name)
         repo.git.tag(tag_name, repo.iter_commits[0])
 
+    repo.close()
+
 
 def uuid_filename(repo):
     ''' Return the full path of the UUID order file for this repo '''
@@ -175,7 +183,7 @@ def checkout_revision(repo, rev):
     repo.git.checkout(rev, force=True)
 
 
-def write_notebook(repo, nb_path):
+def write_notebook(nb_dir, nb_name):
     ''' Write a new notebook given a repo state '''
     ''' Work In Progress reconstruction. For now, restore from snapshot
     uuids = uuids_from_git(repo)
@@ -186,22 +194,20 @@ def write_notebook(repo, nb_path):
     rename(nb_path + '.tmp', nb_path)
     '''
 
-    snapshot = path.join(repo.working_tree_dir, 'snapshot.ipynb')
+    snapshot = get_snapshot_path(nb_dir, nb_name)
+    nb_path = get_nb_path(nb_dir, nb_name)
     copyfile(snapshot, nb_path)
 
 
 def restore_snapshot(nb_dir, nb_name, rev):
     repo = open_repo(get_repo_path(nb_dir, nb_name))
     checkout_revision(repo, rev)
-    write_notebook(repo, nb_name)
+    write_notebook(nb_dir, nb_name)
     repo.close()
 
 
 def save_notebook(nb_dir, nb_name, tag_name=None):
-    nb = open_notebook(get_nb_path(nb_dir, nb_name))
-    repo = open_repo(get_repo_path(nb_dir, nb_name))
-    update_repo(repo, nb, tag_name)
-    repo.close()
+    update_repo(nb_dir, nb_name, tag_name)
 
 
 def rename_notebook(nb_dir, old_name, new_name):
@@ -227,3 +233,7 @@ def get_repo_path(nb_dir, nb_name):
 
 def get_nb_path(nb_dir, nb_name):
     return path.join(nb_dir, nb_name)
+
+
+def get_snapshot_path(nb_dir, nb_name):
+    return path.join(get_repo_path(nb_dir, nb_name), 'snapshot.ipynb')
