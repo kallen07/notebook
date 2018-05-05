@@ -602,7 +602,7 @@ define([
      * @return {jQuery} A selector of the given cell.
      */
     Notebook.prototype.get_cell_element = function (index) {
-        console.log("getting cell element with index: " + index);
+        // console.log("getting cell element with index: " + index);
         var result = null;
         var e = this.get_cell_elements().eq(index);
         if (e.length !== 0) {
@@ -628,7 +628,7 @@ define([
      * @return {integer} The number of cells in this notebook
      */
     Notebook.prototype.ncells = function () {
-        console.log("getting number of cells. It's: " + this.get_cell_elements().length);
+        // console.log("getting number of cells. It's: " + this.get_cell_elements().length);
         return this.get_cell_elements().length;
     };
 
@@ -2731,8 +2731,8 @@ define([
         // the notebook as needed.
         this.events.trigger('before_save.Notebook');
 
-        console.log("Printing 'this' (notebook?)");
-        console.log(this.toJSON());
+        // console.log("Printing 'this' (notebook?)");
+        // console.log(this.toJSON());
 
         // Create a JSON model to be sent to the server.
         var model = {
@@ -2742,23 +2742,8 @@ define([
 
         console.log("============================Model:============================");
         console.log(model);
-        var xmlHttp = new XMLHttpRequest();
-        xmlHttp.onreadystatechange = function() {
-          if (this.readyState == 4 && this.status == 200) {
-            console.log("Got response!! " + this.responseText);
-          }
-        };
-        xmlHttp.open( "POST", "http://localhost:8000/save_notebook", true ); // false for synchronous request
-        var post_data = {
-            nb_name: this.notebook_path,
-            nb_contents: model
-        };
-        console.log("Sending post data:");
-        console.log(post_data);
-        xmlHttp.send(JSON.stringify(post_data));
-        console.log("============================Cell contents (first cell):============================");
-        console.log(model["content"]["cells"][0]["cell_type"])
-        console.log(model["content"]["cells"][0]["source"])
+        
+        
         // time the ajax call for autosave tuning purposes.
         var start =  new Date().getTime();
 
@@ -2841,7 +2826,7 @@ define([
         this.last_modified = new Date(data.last_modified);
         // debug 484
         this._last_modified = 'save-success:'+data.last_modified;
-        console.log("Save succeeded!");
+        // console.log("Save succeeded!");
         if (data.message) {
             // save succeeded, but validation failed.
             var body = $("<div>");
@@ -2888,6 +2873,7 @@ define([
             // do not round or anything below 5000ms will desactivate saving.
             interval = 10000 * Math.ceil(interval / 10000);
             // set new interval, if it's changed
+            console.log("\tNew autosave interval: " + interval);
             if (interval !== this.autosave_interval) {
                 this.set_autosave_interval(interval);
             }
@@ -3370,19 +3356,7 @@ define([
     Notebook.prototype.restore_checkpoint = function (checkpoint) {
         this.events.trigger('notebook_restoring.Notebook', checkpoint);
         console.log("Restoring checkpoint " + checkpoint);
-        var xmlHttp = new XMLHttpRequest();
-        xmlHttp.onreadystatechange = function() {
-          if (this.readyState == 4 && this.status == 200) {
-            console.log("Got response!! " + this.responseText);
-          }
-        };
-        xmlHttp.open( "POST", "http://localhost:8000/restore_checkpoint", true ); // false for synchronous request
-        var post_data = {
-            nb_name: this.notebook_path,
-            rev: checkpoint
-        };
-        // TODO: Repeat this logic but for "git snapshots" or whatever...
-        xmlHttp.send(JSON.stringify(post_data));
+        
 
         var that = this;
         this.contents.restore_checkpoint(this.notebook_path, checkpoint).then(
@@ -3399,6 +3373,22 @@ define([
     Notebook.prototype.restore_checkpoint_success = function () {
         this.events.trigger('checkpoint_restored.Notebook');
         console.log("Restored checkpoint success!");
+
+        // TODO: Remove this logic from here and put in wherever the git snapshots
+        // javascript ends up
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            console.log("Got response!! " + this.responseText);
+          }
+        };
+        xmlHttp.open( "POST", "http://localhost:8000/restore_snapshot", true );
+        var post_data = {
+            nb_name: this.notebook_path,
+            rev: "elena" // TODO: Change to be an actual snapshot id
+        };
+
+        xmlHttp.send(JSON.stringify(post_data));
         this.load_notebook(this.notebook_path);
     };
 

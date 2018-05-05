@@ -38,10 +38,33 @@ define([
             that.update_document_title();
         });
         this.events.on('notebook_saved.Notebook', function () {
+            console.log("notebook_saved.Notebook");
+            var model = {
+                type : "notebook",
+                content : that.notebook.toJSON()
+            };
+
+
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() {
+              if (this.readyState == 4 && this.status == 200) {
+                console.log("Got response!! " + this.responseText);
+              }
+            };
+            xmlHttp.open( "POST", "http://localhost:8000/save_notebook", true ); // false for synchronous request
+            var post_data = {
+                nb_name: that.notebook.notebook_path,
+                nb_contents: model
+            };
+            console.log("Sending post data:");
+            console.log(post_data);
+            xmlHttp.send(JSON.stringify(post_data));
+
             that.update_notebook_name();
             that.update_document_title();
         });
         this.events.on('notebook_renamed.Notebook', function () {
+            console.log("notebook_renamed.Notebook");
             that.update_notebook_name();
             that.update_document_title();
             that.update_address_bar();
@@ -55,10 +78,14 @@ define([
             that.set_save_status = function () {};
         });
         this.events.on('checkpoints_listed.Notebook', function (event, data) {
+            console.log("checkpoints_listed.Notebook. Data:");
+            console.log(data);
             that._set_last_checkpoint(data[0]);
         });
 
         this.events.on('checkpoint_created.Notebook', function (event, data) {
+            console.log("checkpoints_created.Notebook. Data:");
+            console.log(data);
             that._set_last_checkpoint(data);
         });
         this.events.on('set_dirty.Notebook', function (event, data) {
