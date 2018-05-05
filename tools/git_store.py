@@ -101,7 +101,7 @@ def get_tag_list(nb_dir, nb_name):
 
 def delete_notebook(nb_dir, nb_name):
     ''' Delete a notebook by erasing the git repo '''
-    call('rm -rf {}'.format(get_repo_path(nb_dir, nb_name))
+    call(['rm', '-rf', get_repo_path(nb_dir, nb_name)])
 
 
 #####################################################################
