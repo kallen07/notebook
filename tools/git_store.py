@@ -10,30 +10,119 @@ from subprocess import call
 from git import Repo, InvalidGitRepositoryError
 
 
-'''
-    Example Usage (Notebook --> Git):
-        nb = open_notebook(nb_path)
-        repo = open_repo(repo_path)
-        update_repo(repo, nb)
-        repo.close()
-
-    Example Usage (Git --> Notebook):
-        repo = open_repo(repo_path)
-        checkout_revision(repo, revision)
-        write_notebook(repo, nb_path)
-        repo.close()
-'''
+#####################################################################
+#                                                                   #
+#                            EndPoints                              #
+#                                                                   #
+#####################################################################
 
 
-def open_notebook(nb_path):
+def save_notebook(nb_dir, nb_name, tag_name=None):
+    ''' Write updated UUIDS and git add/rm changed cell files '''
+
+    notebook = open_notebook(nb_dir, nb_name)
+    repo = open_repo(nb_dir, nb_name)
+    #
+    # Checkout master to get most recent copy of git log
+    #
+    # 'Force' forces the current repo state to be discarded so that the current
+    # repo now matches the checked out commit exactly. This overwrite of the
+    # repo state is what lets us move between commits where cells are being
+    # created and deleted without cluttering up our repo.
+    #
+    repo.git.checkout('master', force=True)
+
+    #
+    # Write all current cells to their own files
+    #
+    write_cells(repo, notebook)
+
+    #
+    # Write copy of notebook to make restores easier
+    #
+    write_snapshot(nb_dir, nb_name)
+
+    #
+    # Update UUIDS file, get changed uuids
+    #
+    new_uuids, deleted_uuids = change_uuids(repo, notebook)
+
+    #
+    # Update git index
+    #
+    index = repo.index
+    if new_uuids:
+        index.add(new_uuids)
+    if deleted_uuids:
+        index.remove(deleted_uuids)
+    index.add(['UUIDS', 'snapshot.ipynb'])
+    index.write_tree()
+
+    if tag_name is None:
+        index.commit('Unnamed save')
+    else:
+        index.commit('Tagged Checkpoint: {}'.format(tag_name))
+        repo.git.tag(tag_name, get_log(repo)[0])
+
+    repo.close()
+
+
+def restore_snapshot(nb_dir, nb_name, rev):
+    ''' Overwrite notebook (.ipynb) file with a previous version, specified by
+        revision identifier 'rev', which can be a tag name or a commit hash
+    '''
+    repo = open_repo(nb_dir, nb_name)
+    checkout_revision(repo, rev)
+    write_notebook(nb_dir, nb_name)
+    repo.close()
+
+
+def rename_notebook(nb_dir, old_name, new_name):
+    ''' Rename a notebook by renaming the git repo directory that backs it up.
+        Jupyter already renames the .ipynb file
+    '''
+    old_path = get_repo_path(nb_dir, old_name)
+    new_path = get_repo_path(nb_dir, new_name)
+
+    #
+    # NOTE: What to do about names with spaces
+    #
+    call('mv {0} {1}'.format(old_path, new_path))
+
+
+def get_tag_list(nb_dir, nb_name):
+    ''' Get an ordered list of git tags for this repo.
+        Git tags are used to mark revisions the users specify '''
+    repo = open_repo(nb_dir, nb_name)
+    tags = repo.git.tag().split('\n')
+    repo.close()
+    return tags
+
+
+#####################################################################
+#                                                                   #
+#                           Not Endpoints                           #
+#                                                                   #
+#####################################################################
+
+
+def open_notebook(nb_dir, nb_name):
     ''' Load and return a Jupyter notebook specified by 'path' '''
+    nb_path = get_nb_path(nb_dir, nb_name)
     with open(nb_path, 'r') as nb_file:
         notebook = load(nb_file)
     return notebook
 
 
-def open_repo(repo_path):
+def get_nb_path(nb_dir, nb_name):
+    ''' Get full path of notebook (.ipynb) file '''
+    return path.join(nb_dir, nb_name)
+
+
+def open_repo(nb_dir, nb_name):
     ''' Load (or init if it does not exist) a git repo specified by 'path' '''
+    repo_path = get_repo_path(nb_dir, nb_name)
+
     if not path.isdir(repo_path):
         mkdir(repo_path)
 
@@ -48,10 +137,47 @@ def open_repo(repo_path):
         repo = Repo.init(repo_path)
         with open(uuid_filename(repo), 'w+') as uuid_file:
             uuid_file.write('')
+        write_snapshot(nb_dir, nb_name)
         index = repo.index
-        index.add(['UUIDS', uuid_filename(repo)])
-        index.commit('First Commit')
+        index.add([uuid_filename(repo)])
+        index.commit('Init {} repo'.format(nb_name))
         return repo
+
+
+def get_repo_path(nb_dir, nb_name):
+    ''' Get full path of git repo for specified notebook '''
+    repo_name = get_repo_name(nb_name)
+    repo_path = path.join(nb_dir, repo_name)
+    return repo_path
+
+
+def get_repo_name(nb_name):
+    ''' Get name of repo directory for specified notebook '''
+    return '.' + nb_name.split('.ipynb')[0] + '_repo'
+
+
+def write_snapshot(nb_dir, nb_name):
+    ''' Write snapshot of notebook, duplicating whole file '''
+    notebook = open_notebook(nb_dir, nb_name)
+    with open(get_snapshot_path(nb_dir, nb_name), 'w+') as snapshot:
+        dump(notebook, snapshot)
+
+
+def get_snapshot_path(nb_dir, nb_name):
+    ''' Get full path of snapshot file '''
+    return path.join(get_repo_path(nb_dir, nb_name), 'snapshot.ipynb')
+
+
+def uuid_filename(repo):
+    ''' Return the full path of the UUID order file for this repo '''
+    return path.join(repo.working_tree_dir, 'UUIDS')
+
+
+def get_log(repo):
+    ''' Get list of commits for this repo. Returns list of GitPython.Commit
+        objects
+    '''
+    return repo.iter_commits()
 
 
 def write_cells(repo, notebook):
@@ -64,39 +190,6 @@ def write_cells(repo, notebook):
                                   cell['metadata']['uuid'])
         with open(cell_filename, 'w+') as cell_file:
             dump(cell, cell_file)
-
-
-def write_uuids(repo, uuids):
-    ''' Write contents of uuiids list to uuid file in specified repo '''
-    with open(uuid_filename(repo), 'w') as uuid_file:
-        for uuid in uuids:
-            uuid_file.write('{}\n'.format(uuid))
-
-
-def uuids_from_git(repo):
-    ''' Read the uuid file and return a list of uuids from previous commit '''
-    with open(uuid_filename(repo), 'r') as uuid_file:
-        uuids = uuid_file.read().splitlines()
-    return uuids
-
-
-def uuids_from_notebook(notebook):
-    ''' Read Notebook and return the list of uuids, sorted by cell order '''
-    return [cell['metadata']['uuid'] for cell in notebook['cells']]
-
-
-def removed_uuids(previous, current):
-    ''' Return a list of cell uuids that have been deleted (ie. are present in
-        the git repo but not in the current notebook)
-    '''
-    return list(set(previous) - set(current))
-
-
-def added_uuids(previous, current):
-    ''' Return a list of cell uuids that have just been created (ie. are present
-        in the current notebook but not yet in the git repo)
-    '''
-    return list(set(current) - set(previous))
 
 
 def change_uuids(repo, notebook):
@@ -117,65 +210,37 @@ def change_uuids(repo, notebook):
     return (new_uuids, deleted_uuids)
 
 
-def write_snapshot(nb_dir, nb_name, notebook):
-    ''' Write snapshot of notebook, duplicating whole file '''
-    with open(get_snapshot_path(nb_dir, nb_name), 'w+') as snapshot:
-        dump(notebook, snapshot)
+def uuids_from_git(repo):
+    ''' Read the uuid file and return a list of uuids from previous commit '''
+    with open(uuid_filename(repo), 'r') as uuid_file:
+        uuids = uuid_file.read().splitlines()
+    return uuids
 
 
-def update_repo(nb_dir, nb_name, tag_name=None):
-    ''' Write updated UUIDS and git add/rm changed cell files '''
-
-    notebook = open_notebook(get_nb_path(nb_dir, nb_name))
-    repo = open_repo(get_repo_path(nb_dir, nb_name))
-    #
-    # Checkout master to get most recent copy of git log
-    #
-    # 'Force' forces the current repo state to be discarded so that the current
-    # repo now matches the checked out commit exactly. This overwrite of the
-    # repo state is what lets us move between commits where cells are being
-    # created and deleted without cluttering up our repo.
-    #
-    repo.git.checkout('master', force=True)
-
-    #
-    # Write all current cells to their own files
-    #
-    write_cells(repo, notebook)
-
-    #
-    # Write copy of notebook to make restores easier
-    #
-    write_snapshot(nb_dir, nb_name, notebook)
-
-    #
-    # Update UUIDS file, get changed uuids
-    #
-    new_uuids, deleted_uuids = change_uuids(repo, notebook)
-
-    #
-    # Update git index
-    #
-    index = repo.index
-    if new_uuids:
-        index.add(new_uuids)
-    if deleted_uuids:
-        index.remove(deleted_uuids)
-    index.add(['UUIDS', 'snapshot.ipynb'])
-    index.write_tree()
-
-    if tag_name is None:
-        index.commit('a commit message')
-    else:
-        index.commit(tag_name)
-        repo.git.tag(tag_name, repo.iter_commits[0])
-
-    repo.close()
+def uuids_from_notebook(notebook):
+    ''' Read Notebook and return the list of uuids, sorted by cell order '''
+    return [cell['metadata']['uuid'] for cell in notebook['cells']]
 
 
-def uuid_filename(repo):
-    ''' Return the full path of the UUID order file for this repo '''
-    return path.join(repo.working_tree_dir, 'UUIDS')
+def added_uuids(previous, current):
+    ''' Return a list of cell uuids that have just been created (ie. are present
+        in the current notebook but not yet in the git repo)
+    '''
+    return list(set(current) - set(previous))
+
+
+def removed_uuids(previous, current):
+    ''' Return a list of cell uuids that have been deleted (ie. are present in
+        the git repo but not in the current notebook)
+    '''
+    return list(set(previous) - set(current))
+
+
+def write_uuids(repo, uuids):
+    ''' Write contents of uuiids list to uuid file in specified repo '''
+    with open(uuid_filename(repo), 'w') as uuid_file:
+        for uuid in uuids:
+            uuid_file.write('{}\n'.format(uuid))
 
 
 def checkout_revision(repo, rev):
@@ -197,43 +262,3 @@ def write_notebook(nb_dir, nb_name):
     snapshot = get_snapshot_path(nb_dir, nb_name)
     nb_path = get_nb_path(nb_dir, nb_name)
     copyfile(snapshot, nb_path)
-
-
-def restore_snapshot(nb_dir, nb_name, rev):
-    repo = open_repo(get_repo_path(nb_dir, nb_name))
-    checkout_revision(repo, rev)
-    write_notebook(nb_dir, nb_name)
-    repo.close()
-
-
-def save_notebook(nb_dir, nb_name, tag_name=None):
-    update_repo(nb_dir, nb_name, tag_name)
-
-
-def rename_notebook(nb_dir, old_name, new_name):
-    old_path = get_repo_path(nb_dir, old_name)
-    new_path = get_repo_path(nb_dir, new_name)
-
-    call(['mv', old_path, new_path])
-
-
-def get_log(repo):
-    return repo.iter_commits()
-
-
-def get_repo_name(nb_name):
-    return '.' + nb_name.split(".ipynb")[0] + '_repo'
-
-
-def get_repo_path(nb_dir, nb_name):
-    repo_name = get_repo_name(nb_name)
-    repo_path = path.join(nb_dir, repo_name)
-    return repo_path
-
-
-def get_nb_path(nb_dir, nb_name):
-    return path.join(nb_dir, nb_name)
-
-
-def get_snapshot_path(nb_dir, nb_name):
-    return path.join(get_repo_path(nb_dir, nb_name), 'snapshot.ipynb')
