@@ -51,7 +51,7 @@ define([
                 console.log("Got response!! " + this.responseText);
               }
             };
-            xmlHttp.open( "POST", "http://localhost:8000/save_notebook", true ); // false for synchronous request
+            xmlHttp.open( "POST", "http://localhost:8000/save_notebook", true );
             var post_data = {
                 nb_name: that.notebook.notebook_path,
                 nb_contents: model

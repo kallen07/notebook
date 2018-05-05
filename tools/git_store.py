@@ -55,7 +55,7 @@ def save_notebook(nb_dir, nb_name, tag_name=None):
         index.add(new_uuids)
     if deleted_uuids:
         index.remove(deleted_uuids)
-    index.add(['UUIDS', 'snapshot.ipynb'])
+    index.add([uuid_filename(repo), get_snapshot_path(nb_dir, nb_name)])
     index.write_tree()
 
     if tag_name is None:
@@ -87,7 +87,7 @@ def rename_notebook(nb_dir, old_name, new_name):
     #
     # NOTE: What to do about names with spaces
     #
-    call('mv {0} {1}'.format(old_path, new_path))
+    call(['mv', old_path, new_path])
 
 
 def get_tag_list(nb_dir, nb_name):
@@ -139,7 +139,7 @@ def open_repo(nb_dir, nb_name):
             uuid_file.write('')
         write_snapshot(nb_dir, nb_name)
         index = repo.index
-        index.add([uuid_filename(repo)])
+        index.add([uuid_filename(repo), get_snapshot_path(nb_dir, nb_name)])
         index.commit('Init {} repo'.format(nb_name))
         return repo
 
@@ -245,6 +245,12 @@ def write_uuids(repo, uuids):
 
 def checkout_revision(repo, rev):
     ''' Update repo to revision id rev '''
+    if rev == "elena":
+        logs = get_log(repo)
+        for log in logs:
+            print("Log: {}".format(log))
+            rev = log
+    print("Checking out {}".format(rev))
     repo.git.checkout(rev, force=True)
 
 

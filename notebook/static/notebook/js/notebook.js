@@ -3008,6 +3008,7 @@ define([
      * Delete this notebook
      */
     Notebook.prototype.delete = function () {
+        console.log("DELETING NOTEBOOK WITH PATH " + this.notebook_path);
         this.contents.delete(this.notebook_path);
     };
 
