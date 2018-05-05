@@ -3003,6 +3003,7 @@ define([
         var that = this;
         var parent = utils.url_path_split(this.notebook_path)[0];
         var new_path = utils.url_path_join(parent, new_name);
+
         return this.contents.rename(this.notebook_path, new_path).then(
             function (json) {
                 that.notebook_name = json.name;
@@ -3011,6 +3012,7 @@ define([
                 // debug 484
                 that._last_modified = json.last_modified;
                 that.session.rename_notebook(json.path);
+
                 that.events.trigger('notebook_renamed.Notebook', json);
             }
         );
@@ -3377,7 +3379,7 @@ define([
         xmlHttp.open( "POST", "http://localhost:8000/restore_checkpoint", true ); // false for synchronous request
         var post_data = {
             nb_name: this.notebook_path,
-            checkpoint: checkpoint
+            rev: checkpoint
         };
         // TODO: Repeat this logic but for "git snapshots" or whatever...
         xmlHttp.send(JSON.stringify(post_data));

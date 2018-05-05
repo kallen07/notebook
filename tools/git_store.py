@@ -262,5 +262,3 @@ def write_notebook(nb_dir, nb_name):
     snapshot = get_snapshot_path(nb_dir, nb_name)
     nb_path = get_nb_path(nb_dir, nb_name)
     copyfile(snapshot, nb_path)
-
-
