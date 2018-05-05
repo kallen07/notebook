@@ -83,6 +83,13 @@ class GitStoreHandler(BaseHTTPRequestHandler):
 
             self.wfile.write(dumps(tags).encode())
 
+        elif self.path == '/delete_notebook':
+            nb_name = self.data_json['nb_name']
+
+            log.info('in delete_notebook, nb_name: {}'.format(nb_name))
+
+            delete_notebook(nb_dir, nb_name)
+
         else:
             log.warn('Unrecognized path: {0}'.format(self.path))
 
