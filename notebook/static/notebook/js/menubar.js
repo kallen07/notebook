@@ -328,15 +328,14 @@ define([
         this.element.find('#keyboard_shortcuts').click(function () {
             that.quick_help.show_keyboard_shortcuts();
         });
-        
+
+        // TODO kalina add new snapshot to list after this function is called
         this.element.find('#create_snapshot').click(function (event, data) {
             // kalina
             console.log("CLICKED CREATE SNAPSHOT in menubar.js");
-            //that.save_widget.rename_notebook()
-            //that.notebook.restore_checkpoint_dialog(that.notebook.checkpoints);
+            //console.log("that is in function" + that);
+            //MenuBar.update_restore_snapshots();
 
-            //options = options || {};
-            
             var that = this;
             var dialog_body = $('<div/>').append(
                 $("<p/>").addClass("rename-message")
@@ -360,7 +359,7 @@ define([
                         class: "btn-primary",
                         click: function () {
                             var new_name = d.find('input').val();
-                            console.log("the snapshot name is" + new_name);                            
+                            console.log("the snapshot name is" + new_name);
                             d.modal('hide');
                         }
                     }   
@@ -378,51 +377,20 @@ define([
                     d.find('input[type="text"]').focus().select();
                 }
             });
-
-            this.notebook.keyboard_manager.register_events(d);
         });
 
-        this.element.find('#restore_snapshot').click(function (event, data) {
-            console.log("CLICKED RESTORE SNAPSHOT in menubar.js");
-
-/**
-            var dialog_body = $('<div/>').append(
-                $("<p/>").addClass("rename-message")
-                    .text(i18n.msg._('Enter a new snapshot name:'))
-                ).append(
-                    $("<br/>")
-                ).append(
-                    $('<input/>').attr('type','text').attr('size','25').addClass('form-control')
-                    .val("My new snapshot")
-                );
-
-            var d = dialog.modal({
-                    body: dialog_body,
-                    title: 'Select a snapshot to restore',
-                    keyboard_manager: this.keyboard_manager,
-                    default_button: "Cancel",
-                radio:{
-                    flag1:function(){},
-                    flag2:function(){},
-                    flag3:function(){}
-                },
-                buttons: {
-                    'Confirm Save': function () {
-                          //Handle flagdata JSON and send ot serverside
-
-                    },
-                    'Cancel': function () {
-                        $('#dlg-flag').dialog('close');
-                    }
-                }
-            });
-            */
-        });
+// TODO kalina delete this 
+//        this.element.find('#restore_snapshot').click(function (event, data) {
+//        });
 
         this.update_restore_checkpoint(null);
+
+        this.update_restore_snapshots();
         
         this.events.on('checkpoints_listed.Notebook', function (event, data) {
             that.update_restore_checkpoint(that.notebook.checkpoints);
+            console.log("value of that in another funct " + that);
+
         });
         
         this.events.on('checkpoint_created.Notebook', function (event, data) {
@@ -485,6 +453,7 @@ define([
         });
     };
 
+    // kalina
     MenuBar.prototype.update_restore_checkpoint = function(checkpoints) {
         var ul = this.element.find("#restore_checkpoint").find("ul");
         ul.empty();
@@ -510,6 +479,40 @@ define([
                     .text(moment(d).format("LLLL"))
                     .click(function () {
                         that.notebook.restore_checkpoint_dialog(checkpoint);
+                    })
+                )
+            );
+        });
+    };
+
+    MenuBar.prototype.update_restore_snapshots = function() {
+        console.log("UPDATING RESTORE SNAPSHOTS");
+        var tags = ["tag1", "tag2", "tag3"]
+        //var tags = []
+        var ul = this.element.find("#restore_snapshot").find("ul");
+        ul.empty();
+        if (!tags || tags.length === 0) {
+            ul.append(
+                $("<li/>")
+                .addClass("disabled")
+                .append(
+                    $("<a/>")
+                    .text(i18n.msg._("No tags"))
+                )
+            );
+            return;
+        }
+        var that = this;
+        tags.map(function (tag) {
+            //var d = new Date(checkpoint.last_modified);
+            ul.append(
+                $("<li/>").append(
+                    $("<a/>")
+                    .attr("href", "#")
+                    .text(tag)
+                    .click(function () {
+                        // TODO add restore code kalina
+                        //that.notebook.restore_checkpoint_dialog(checkpoint);
                     })
                 )
             );
