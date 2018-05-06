@@ -74,6 +74,15 @@ class GitStoreHandler(BaseHTTPRequestHandler):
 
             save_notebook(nb_dir, nb_name, tag_name=tag)
 
+        elif self.path == '/delete_tag':
+            nb_name = self.data_json['nb_name']
+            tag = self.data_json['tag_name']
+
+            log.info('in delete_tag, nb_name: {0}, tag_name: {1}'
+                     .format(nb_name, tag))
+
+            delete_tag(nb_dir, nb_name, tag_name=tag)
+
         elif self.path == '/get_tags':
             nb_name = self.data_json['nb_name']
             tags = get_tag_list(nb_dir, nb_name)

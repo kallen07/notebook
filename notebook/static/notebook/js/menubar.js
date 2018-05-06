@@ -329,48 +329,15 @@ define([
         this.element.find('#keyboard_shortcuts').click(function () {
             that.quick_help.show_keyboard_shortcuts();
         });
-        
-        this.element.find('#restore_snapshot').click(function (event, data) {
-            console.log("CLICKED RESTORE SNAPSHOT in menubar.js");
-
-/**
-            var dialog_body = $('<div/>').append(
-                $("<p/>").addClass("rename-message")
-                    .text(i18n.msg._('Enter a new snapshot name:'))
-                ).append(
-                    $("<br/>")
-                ).append(
-                    $('<input/>').attr('type','text').attr('size','25').addClass('form-control')
-                    .val("My new snapshot")
-                );
-
-            var d = dialog.modal({
-                    body: dialog_body,
-                    title: 'Select a snapshot to restore',
-                    keyboard_manager: this.keyboard_manager,
-                    default_button: "Cancel",
-                radio:{
-                    flag1:function(){},
-                    flag2:function(){},
-                    flag3:function(){}
-                },
-                buttons: {
-                    'Confirm Save': function () {
-                          //Handle flagdata JSON and send ot serverside
-
-                    },
-                    'Cancel': function () {
-                        $('#dlg-flag').dialog('close');
-                    }
-                }
-            });
-            */
-        });
 
         this.update_restore_checkpoint(null);
+
+        this.update_restore_snapshots();
         
         this.events.on('checkpoints_listed.Notebook', function (event, data) {
             that.update_restore_checkpoint(that.notebook.checkpoints);
+            console.log("value of that in another funct " + that);
+
         });
         
         this.events.on('checkpoint_created.Notebook', function (event, data) {
@@ -433,6 +400,7 @@ define([
         });
     };
 
+    // kalina
     MenuBar.prototype.update_restore_checkpoint = function(checkpoints) {
         var ul = this.element.find("#restore_checkpoint").find("ul");
         ul.empty();
@@ -458,6 +426,40 @@ define([
                     .text(moment(d).format("LLLL"))
                     .click(function () {
                         that.notebook.restore_checkpoint_dialog(checkpoint);
+                    })
+                )
+            );
+        });
+    };
+
+    MenuBar.prototype.update_restore_snapshots = function() {
+        console.log("UPDATING RESTORE SNAPSHOTS");
+        var tags = ["tag1", "tag2", "tag3"]
+        //var tags = []
+        var ul = this.element.find("#restore_snapshot").find("ul");
+        ul.empty();
+        if (!tags || tags.length === 0) {
+            ul.append(
+                $("<li/>")
+                .addClass("disabled")
+                .append(
+                    $("<a/>")
+                    .text(i18n.msg._("No tags"))
+                )
+            );
+            return;
+        }
+        var that = this;
+        tags.map(function (tag) {
+            //var d = new Date(checkpoint.last_modified);
+            ul.append(
+                $("<li/>").append(
+                    $("<a/>")
+                    .attr("href", "#")
+                    .text(tag)
+                    .click(function () {
+                        // TODO add restore code kalina
+                        //that.notebook.restore_checkpoint_dialog(checkpoint);
                     })
                 )
             );
