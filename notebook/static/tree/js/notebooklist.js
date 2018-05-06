@@ -1186,6 +1186,22 @@ define([
         /**
          * Remove the deleted notebook.
          */
+
+        console.log("notebook_deleted, path=" + path);
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            console.log("Got response!! " + this.responseText);
+          }
+        };
+        xmlHttp.open( "POST", "http://localhost:8000/delete_notebook", true );
+        var post_data = {
+            nb_name: path,
+        };
+
+        xmlHttp.send(JSON.stringify(post_data));
+
+
         var that = this;
         $(".list_item").each(function() {
             var element = $(this);
