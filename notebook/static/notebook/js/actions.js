@@ -818,7 +818,7 @@ define([
             help: i18n.msg._("Rename the current notebook"),
             handler : function (env, event) {
                 env.notebook.save_widget.rename_notebook({notebook: env.notebook});
-            }
+            } // kalina
         },
         'toggle-all-cells-output-collapsed':{
             cmd: i18n.msg._('toggle all cells output collapsed'),

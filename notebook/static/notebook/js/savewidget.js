@@ -31,8 +31,14 @@ define([
     SaveWidget.prototype.bind_events = function () {
         var that = this;
         this.element.find('span.filename').click(function () {
+            console.log("CLICKED NAME SaveWidget");
             that.rename_notebook({notebook: that.notebook});
         });
+        //this.element.find('#create_snapshot').click(function () {
+            /** kalina this bind doesn't work for some reason? **/
+        //    console.log("CLICKED CREATE SNAPSHOT savewidget");
+        //    that.rename_notebook({notebook: that.notebook});
+        //});
         this.events.on('notebook_loaded.Notebook', function () {
             that.update_notebook_name();
             that.update_document_title();
@@ -72,6 +78,7 @@ define([
     var button_labels = [ i18n.msg._("Cancel"), i18n.msg._("Rename"), i18n.msg._("OK")];
 
     SaveWidget.prototype.rename_notebook = function (options) {
+        console.log("IN RENAME NOTEBOOK");
         options = options || {};
         var that = this;
         var dialog_body = $('<div/>').append(

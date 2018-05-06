@@ -3016,7 +3016,7 @@ define([
                 that.events.trigger('notebook_renamed.Notebook', json);
             }
         );
-    };
+    };  // kalina
 
     /**
      * Delete this notebook

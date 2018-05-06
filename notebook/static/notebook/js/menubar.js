@@ -7,10 +7,11 @@ define([
     'base/js/dialog',
     'base/js/utils',
     'base/js/i18n',
+    'base/js/keyboard',
     './celltoolbar',
     './tour',
     'moment',
-], function($, IPython, dialog, utils, i18n, celltoolbar, tour, moment) {
+], function($, IPython, dialog, utils, i18n, keyboard, celltoolbar, tour, moment) {
     "use strict";
 
     var MenuBar = function (selector, options) {
@@ -328,6 +329,96 @@ define([
             that.quick_help.show_keyboard_shortcuts();
         });
         
+        this.element.find('#create_snapshot').click(function (event, data) {
+            // kalina
+            console.log("CLICKED CREATE SNAPSHOT in menubar.js");
+            //that.save_widget.rename_notebook()
+            //that.notebook.restore_checkpoint_dialog(that.notebook.checkpoints);
+
+            //options = options || {};
+            
+            var that = this;
+            var dialog_body = $('<div/>').append(
+                $("<p/>").addClass("rename-message")
+                    .text(i18n.msg._('Enter a new snapshot name:'))
+                ).append(
+                    $("<br/>")
+                ).append(
+                    $('<input/>').attr('type','text').attr('size','25').addClass('form-control')
+                    .val("My new snapshot")
+                );
+
+            var d = dialog.modal({
+                title: "Create Snapshot",
+                body: dialog_body,
+                //notebook: options.notebook,
+                keyboard_manager: this.keyboard_manager,
+                default_button: "Cancel",
+                buttons : {
+                    "Cancel": {},
+                    "Create": {
+                        class: "btn-primary",
+                        click: function () {
+                            var new_name = d.find('input').val();
+                            console.log("the snapshot name is" + new_name);                            
+                            d.modal('hide');
+                        }
+                    }   
+                },
+                open : function () {
+                    /**
+                     * Upon ENTER, click the OK button.
+                     */
+                    d.find('input[type="text"]').keydown(function (event) {
+                        if (event.which === keyboard.keycodes.enter) {
+                            d.find('.btn-primary').first().click();
+                            return false;
+                        }
+                    });
+                    d.find('input[type="text"]').focus().select();
+                }
+            });
+
+            this.notebook.keyboard_manager.register_events(d);
+        });
+
+        this.element.find('#restore_snapshot').click(function (event, data) {
+            console.log("CLICKED RESTORE SNAPSHOT in menubar.js");
+
+/**
+            var dialog_body = $('<div/>').append(
+                $("<p/>").addClass("rename-message")
+                    .text(i18n.msg._('Enter a new snapshot name:'))
+                ).append(
+                    $("<br/>")
+                ).append(
+                    $('<input/>').attr('type','text').attr('size','25').addClass('form-control')
+                    .val("My new snapshot")
+                );
+
+            var d = dialog.modal({
+                    body: dialog_body,
+                    title: 'Select a snapshot to restore',
+                    keyboard_manager: this.keyboard_manager,
+                    default_button: "Cancel",
+                radio:{
+                    flag1:function(){},
+                    flag2:function(){},
+                    flag3:function(){}
+                },
+                buttons: {
+                    'Confirm Save': function () {
+                          //Handle flagdata JSON and send ot serverside
+
+                    },
+                    'Cancel': function () {
+                        $('#dlg-flag').dialog('close');
+                    }
+                }
+            });
+            */
+        });
+
         this.update_restore_checkpoint(null);
         
         this.events.on('checkpoints_listed.Notebook', function (event, data) {
@@ -424,6 +515,11 @@ define([
             );
         });
     };
+
+
+    /**Menubar.prototype.create_snapshot = function(checkpoints) {
+
+    }; /** KALINA **/
     
     MenuBar.prototype.update_nbconvert_script = function(langinfo) {
         /**
