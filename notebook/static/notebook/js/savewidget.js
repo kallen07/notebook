@@ -34,11 +34,6 @@ define([
             console.log("CLICKED NAME SaveWidget");
             that.rename_notebook({notebook: that.notebook});
         });
-        //this.element.find('#create_snapshot').click(function () {
-            /** kalina this bind doesn't work for some reason? **/
-        //    console.log("CLICKED CREATE SNAPSHOT savewidget");
-        //    that.rename_notebook({notebook: that.notebook});
-        //});
         this.events.on('notebook_loaded.Notebook', function () {
             that.update_notebook_name();
             that.update_document_title();
@@ -103,6 +98,52 @@ define([
     // will pick up the strings.  The actual setting of the text
     // for the button is in dialog.js.
     var button_labels = [ i18n.msg._("Cancel"), i18n.msg._("Rename"), i18n.msg._("OK")];
+
+    SaveWidget.prototype.create_snapshot = function (options) {
+        console.log("CLICKED CREATE SNAPSHOT in savewidget.js");
+        options = options || {};
+        var that = this;
+        var dialog_body = $('<div/>').append(
+            $("<p/>").addClass("createsnapshot-message")
+                .text(i18n.msg._('Enter a new snapshot name:'))
+            ).append(
+                $("<br/>")
+            ).append(
+                $('<input/>').attr('type','text').attr('size','25').addClass('form-control')
+                .val("My new snapshot")
+            );
+
+        var d = dialog.modal({
+            title: "Create Snapshot",
+            body: dialog_body,
+            notebook: options.notebook,
+            keyboard_manager: this.keyboard_manager,
+            default_button: "Cancel",
+            buttons : {
+                "Cancel": {},
+                "Create": {
+                    class: "btn-primary",
+                    click: function () {
+                        var new_name = d.find('input').val();
+                        console.log("the snapshot name is " + new_name);                            
+                        d.modal('hide');
+                    }
+                }   
+            },
+            open : function () {
+                /**
+                 * Upon ENTER, click the OK button.
+                 */
+                d.find('input[type="text"]').keydown(function (event) {
+                    if (event.which === keyboard.keycodes.enter) {
+                        d.find('.btn-primary').first().click();
+                        return false;
+                    }
+                });
+                d.find('input[type="text"]').focus().select();
+            }
+        });
+    }
 
     SaveWidget.prototype.rename_notebook = function (options) {
         console.log("IN RENAME NOTEBOOK");

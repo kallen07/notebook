@@ -820,6 +820,13 @@ define([
                 env.notebook.save_widget.rename_notebook({notebook: env.notebook});
             } // kalina
         },
+        'create-snapshot':{
+            cmd: i18n.msg._('create snapshot'),
+            help: i18n.msg._("Create a new snapshot"),
+            handler : function (env, event) {
+                env.notebook.save_widget.create_snapshot({notebook: env.notebook});
+            } // elena
+        },
         'toggle-all-cells-output-collapsed':{
             cmd: i18n.msg._('toggle all cells output collapsed'),
             help: i18n.msg._("Toggle the hidden state of all output areas"),
