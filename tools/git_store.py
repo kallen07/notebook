@@ -90,9 +90,17 @@ def rename_notebook(nb_dir, old_name, new_name):
     call(['mv', old_path, new_path])
 
 
+def delete_tag(nb_dir, nb_name, tag_name):
+    ''' Delete snapshot tag name. Does not delete revision or alter history '''
+    repo = open_repo(nb_dir, nb_name)
+    repo.git.tag(d=tag_name)
+    repo.close()
+
+
 def get_tag_list(nb_dir, nb_name):
     ''' Get an ordered list of git tags for this repo.
-        Git tags are used to mark revisions the users specify '''
+        Git tags are used to mark revisions the users specify
+    '''
     repo = open_repo(nb_dir, nb_name)
     tags = repo.git.tag().split('\n')
     repo.close()
