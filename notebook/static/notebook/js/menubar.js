@@ -332,7 +332,7 @@ define([
 
         this.update_restore_checkpoint(null);
 
-        this.update_restore_snapshots();
+        this.save_widget.update_restore_snapshots();
         
         this.events.on('checkpoints_listed.Notebook', function (event, data) {
             that.update_restore_checkpoint(that.notebook.checkpoints);
@@ -431,45 +431,6 @@ define([
             );
         });
     };
-
-    MenuBar.prototype.update_restore_snapshots = function() {
-        console.log("UPDATING RESTORE SNAPSHOTS");
-        var tags = ["tag1", "tag2", "tag3"]
-        //var tags = []
-        var ul = this.element.find("#restore_snapshot").find("ul");
-        ul.empty();
-        if (!tags || tags.length === 0) {
-            ul.append(
-                $("<li/>")
-                .addClass("disabled")
-                .append(
-                    $("<a/>")
-                    .text(i18n.msg._("No tags"))
-                )
-            );
-            return;
-        }
-        var that = this;
-        tags.map(function (tag) {
-            //var d = new Date(checkpoint.last_modified);
-            ul.append(
-                $("<li/>").append(
-                    $("<a/>")
-                    .attr("href", "#")
-                    .text(tag)
-                    .click(function () {
-                        // TODO add restore code kalina
-                        //that.notebook.restore_checkpoint_dialog(checkpoint);
-                    })
-                )
-            );
-        });
-    };
-
-
-    /**Menubar.prototype.create_snapshot = function(checkpoints) {
-
-    }; /** KALINA **/
     
     MenuBar.prototype.update_nbconvert_script = function(langinfo) {
         /**

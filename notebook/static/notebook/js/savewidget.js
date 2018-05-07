@@ -142,6 +142,7 @@ define([
                         xmlHttp.send(JSON.stringify(post_data));  
 
                         d.modal('hide');
+                        that.update_restore_snapshots();
                     }
                 }   
             },
@@ -159,6 +160,40 @@ define([
             }
         });
     }
+
+    SaveWidget.prototype.update_restore_snapshots = function() {
+        console.log("UPDATING RESTORE SNAPSHOTS");
+        var tags = ["tag1", "tag2", "tag3"]
+        //var tags = []
+        var ul = $("#restore_snapshot").find("ul");
+        ul.empty();
+        if (!tags || tags.length === 0) {
+            ul.append(
+                $("<li/>")
+                .addClass("disabled")
+                .append(
+                    $("<a/>")
+                    .text(i18n.msg._("No tags"))
+                )
+            );
+            return;
+        }
+        var that = this;
+        tags.map(function (tag) {
+            //var d = new Date(checkpoint.last_modified);
+            ul.append(
+                $("<li/>").append(
+                    $("<a/>")
+                    .attr("href", "#")
+                    .text(tag)
+                    .click(function () {
+                        // TODO add restore code kalina
+                        //that.notebook.restore_checkpoint_dialog(checkpoint);
+                    })
+                )
+            );
+        });
+    };
 
     SaveWidget.prototype.rename_notebook = function (options) {
         console.log("IN RENAME NOTEBOOK");
