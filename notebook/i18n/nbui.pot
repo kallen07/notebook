@@ -158,8 +158,8 @@ msgid "Rename..."
 msgstr ""
 
 #: notebook/templates/notebook.html:93
-msgid "Save and Checkpoint kalina"
-msgstr "Save and Checkpoint kalina"
+msgid "Save and Checkpoint"
+msgstr ""
 
 #: notebook/templates/notebook.html:96
 msgid "Revert to Checkpoint"

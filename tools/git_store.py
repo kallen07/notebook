@@ -260,12 +260,6 @@ def write_uuids(repo, uuids):
 
 def checkout_revision(repo, rev):
     ''' Update repo to revision id rev '''
-    if rev == "elena":
-        logs = get_log(repo)
-        for log in logs:
-            print("Log: {}".format(log))
-            rev = log
-    print("Checking out {}".format(rev))
     repo.git.checkout(rev, force=True)
 
 

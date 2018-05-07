@@ -400,7 +400,6 @@ define([
         });
     };
 
-    // kalina
     MenuBar.prototype.update_restore_checkpoint = function(checkpoints) {
         var ul = this.element.find("#restore_checkpoint").find("ul");
         ul.empty();

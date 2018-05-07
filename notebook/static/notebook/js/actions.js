@@ -818,7 +818,7 @@ define([
             help: i18n.msg._("Rename the current notebook"),
             handler : function (env, event) {
                 env.notebook.save_widget.rename_notebook({notebook: env.notebook});
-            } // kalina
+            }
         },
         'create-snapshot':{
             cmd: i18n.msg._('create snapshot'),
@@ -827,7 +827,7 @@ define([
                 console.log("printing env.notebook:");
                 console.log(env.notebook);
                 env.notebook.save_widget.create_snapshot({notebook: env.notebook});
-            } // elena
+            }
         },
         'toggle-all-cells-output-collapsed':{
             cmd: i18n.msg._('toggle all cells output collapsed'),
