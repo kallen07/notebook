@@ -90,7 +90,11 @@ class GitStoreHandler(BaseHTTPRequestHandler):
             log.info('in get_tags, nb_name: {0}, tags: {1}'
                      .format(nb_name, tags))
 
+
+            self._set_headers()
             self.wfile.write(dumps(tags).encode())
+            self.send_response(200)
+            return
 
         elif self.path == '/delete_notebook':
             nb_name = self.data_json['nb_name']
@@ -104,7 +108,6 @@ class GitStoreHandler(BaseHTTPRequestHandler):
 
         self._set_headers()
         self.send_response(200)
-        self.end_headers()
 
 
 def start_git_store():

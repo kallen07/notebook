@@ -106,7 +106,7 @@ def get_tag_list(nb_dir, nb_name):
     repo = open_repo(nb_dir, nb_name)
     tag_names = repo.git.tag().split('\n')
     repo.close()
-    return tags
+    return tag_names
 
 
 def delete_notebook(nb_dir, nb_name):

@@ -125,7 +125,7 @@ define([
                     class: "btn-primary",
                     click: function () {
                         var new_name = d.find('input').val();
-                        console.log("the snapshot name is " + new_name); 
+                        console.log("the snapshot name is " + new_name);
                         var xmlHttp = new XMLHttpRequest();
                         xmlHttp.onreadystatechange = function() {
                           if (this.readyState == 4 && this.status == 200) {
@@ -139,12 +139,12 @@ define([
                         };
                         console.log("Sending post data:");
                         console.log(post_data);
-                        xmlHttp.send(JSON.stringify(post_data));  
+                        xmlHttp.send(JSON.stringify(post_data));
 
                         d.modal('hide');
                         that.update_restore_snapshots();
                     }
-                }   
+                }
             },
             open : function () {
                 /**
@@ -163,36 +163,68 @@ define([
 
     SaveWidget.prototype.update_restore_snapshots = function() {
         console.log("UPDATING RESTORE SNAPSHOTS");
-        var tags = ["tag1", "tag2", "tag3"]
-        //var tags = []
-        var ul = $("#restore_snapshot").find("ul");
-        ul.empty();
-        if (!tags || tags.length === 0) {
-            ul.append(
-                $("<li/>")
-                .addClass("disabled")
-                .append(
-                    $("<a/>")
-                    .text(i18n.msg._("No tags"))
-                )
-            );
-            return;
-        }
         var that = this;
-        tags.map(function (tag) {
-            //var d = new Date(checkpoint.last_modified);
-            ul.append(
-                $("<li/>").append(
-                    $("<a/>")
-                    .attr("href", "#")
-                    .text(tag)
-                    .click(function () {
-                        // TODO add restore code kalina
-                        //that.notebook.restore_checkpoint_dialog(checkpoint);
-                    })
-                )
-            );
-        });
+
+        //
+        // Get tag list
+        //
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            console.log(this.response);
+            console.log("data: " + JSON.parse(this.response))
+
+            //
+            // This becomes response data
+            //
+            var tags = JSON.parse(this.response)
+
+            var ul = $("#restore_snapshot").find("ul");
+            ul.empty();
+            if (!tags || tags.length === 0) {
+                ul.append(
+                    $("<li/>")
+                    .addClass("disabled")
+                    .append(
+                        $("<a/>")
+                        .text(i18n.msg._("No tags"))
+                    )
+                );
+                return;
+            }
+            tags.forEach(function(tag) {
+                ul.append(
+                    $("<li/>").append(
+                        $("<a/>")
+                        .attr("href", "#")
+                        .text(tag)
+                        .click(function () {
+                            var xmlHttp = new XMLHttpRequest();
+                            xmlHttp.onreadystatechange = function () {
+                              if (this.readyState == 4 && this.status == 200) {
+                                // TODO Reload the notebook, not the whole page
+                                location.reload();
+                              }
+                            }
+                            xmlHttp.open("POST", "http://localhost:8000/restore_snapshot", true);
+                            var post_data = {
+                              nb_name: that.notebook.notebook_path,
+                              rev: tag,
+                            };
+                            xmlHttp.send(JSON.stringify(post_data));
+                        })
+                    )
+                );
+            });
+          }
+        };
+        xmlHttp.open("POST", "http://localhost:8000/get_tags", true);
+        var post_data = {
+            nb_name: that.notebook.notebook_path,
+        };
+        console.log("Sending post data:");
+        console.log(post_data);
+        xmlHttp.send(JSON.stringify(post_data));
     };
 
     SaveWidget.prototype.rename_notebook = function (options) {
@@ -315,10 +347,10 @@ define([
         }
         this._render_checkpoint();
     };
-    
+
     SaveWidget.prototype._render_checkpoint = function () {
         /** actually set the text in the element, from our _checkpoint value
-        
+
         called directly, and periodically in timeouts.
         */
         this._schedule_render_checkpoint();
@@ -339,14 +371,14 @@ define([
             // <Today | yesterday|...> at hh,mm,ss
             human_date = chkd.calendar();
         }
-        
+
         el.text(i18n.msg.sprintf(i18n.msg._('Last Checkpoint: %s'),human_date)).attr('title', long_date);
     };
 
-    
+
     SaveWidget.prototype._schedule_render_checkpoint = function () {
         /** schedule the next update to relative date
-        
+
         periodically updated, so short values like 'a few seconds ago' don't get stale.
         */
         if (!this._checkpoint_date) {
