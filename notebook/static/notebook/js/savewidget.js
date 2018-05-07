@@ -125,7 +125,22 @@ define([
                     class: "btn-primary",
                     click: function () {
                         var new_name = d.find('input').val();
-                        console.log("the snapshot name is " + new_name);                            
+                        console.log("the snapshot name is " + new_name); 
+                        var xmlHttp = new XMLHttpRequest();
+                        xmlHttp.onreadystatechange = function() {
+                          if (this.readyState == 4 && this.status == 200) {
+                            console.log("Got response!! " + this.responseText);
+                          }
+                        };
+                        xmlHttp.open( "POST", "http://localhost:8000/create_tag", true );
+                        var post_data = {
+                            nb_name: that.notebook.notebook_path,
+                            tag_name: new_name
+                        };
+                        console.log("Sending post data:");
+                        console.log(post_data);
+                        xmlHttp.send(JSON.stringify(post_data));  
+
                         d.modal('hide');
                     }
                 }   
@@ -158,8 +173,6 @@ define([
             $('<input/>').attr('type','text').attr('size','25').addClass('form-control')
             .val(options.notebook.get_notebook_name())
         );
-
-        // KALINA LOOK AT THIS ^^
 
         var d = dialog.modal({
             title: i18n.msg._("Rename Notebook"),

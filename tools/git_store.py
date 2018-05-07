@@ -61,8 +61,10 @@ def save_notebook(nb_dir, nb_name, tag_name=None):
     if tag_name is None:
         index.commit('Unnamed save')
     else:
+        tag_name = tag_name.replace(" ", "_")
         index.commit('Tagged Checkpoint: {}'.format(tag_name))
-        repo.git.tag(tag_name, get_log(repo)[0])
+
+        repo.git.tag(tag_name, list(get_log(repo))[0])
 
     repo.close()
 
@@ -102,7 +104,7 @@ def get_tag_list(nb_dir, nb_name):
         Git tags are used to mark revisions the users specify
     '''
     repo = open_repo(nb_dir, nb_name)
-    tags = repo.git.tag().split('\n')
+    tag_names = repo.git.tag().split('\n')
     repo.close()
     return tags
 

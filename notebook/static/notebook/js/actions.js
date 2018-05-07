@@ -824,6 +824,8 @@ define([
             cmd: i18n.msg._('create snapshot'),
             help: i18n.msg._("Create a new snapshot"),
             handler : function (env, event) {
+                console.log("printing env.notebook:");
+                console.log(env.notebook);
                 env.notebook.save_widget.create_snapshot({notebook: env.notebook});
             } // elena
         },
